@@ -1,0 +1,27 @@
+{
+    "uuid": "13D012E5-9C66-4092-BA1A-0445919CB0C3",
+    "type": "Homework",
+    "title": "Draft Questions",
+    "set": "Homework",
+    "number": "1",
+    "allowAccess": [
+        {
+            "mode": "Public",
+            "credit": 100,
+            "startDate": "2023-05-01T00:00:01",
+            "endDate": "2100-05-01T23:59:59"
+        }
+    ],
+    "zones": [
+        {
+            "title": "Multiple-choice Input",
+            "questions": [
+                {
+                    "id": "FM/simple",
+                    "points": 1
+                }
+            ]
+        }
+    ],
+    "text": "<p><strong>Comments about this assessment:</strong> </p><p> This assessment includes examples from the question gallery at <a href=https://www.prairielearn.com/gallery>https://www.prairielearn.com</a>.</p>"
+}

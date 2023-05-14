@@ -1,9 +1,7 @@
 {
     "uuid": "4C16533E-AC7B-41B7-9D38-41DC66A37B4F",
     "title": "Simple multiple-choice question",
-    "topic": "Gallery",
+    "topic": "Draft",
     "type": "v3",
-    "tags": [
-		    "mariana@prairielearn.com"
-    ]
+    "tags": ["FM"]
 }
