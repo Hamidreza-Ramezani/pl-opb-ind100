@@ -15,3 +15,16 @@ You can see and edit a live version at [https://prairielearn.com](https://prairi
 ### Getting Started
 
 Learn how to create your first questions and assessments using our [Get Started](https://prairielearn.readthedocs.io/en/latest/getStarted/) tutorial.
+
+## Firas' instructions
+
+- start in `~/Sync/EL/OPB`
+- launch docker container:
+    ```
+    docker run -it --rm -p 3000:3000 -v ~/Sync/EL/OPB/course_dev/pl-opb-ind100:/course prairielearn/prairielearn
+    ```
+- Move a question you're working on in `course_dev`, and then run the following command from `~/Sync/EL/OPB`
+
+    ```
+    python physics/instructor_physics_bank/scripts/checkq.py course_dev/q01_multiple-choice/q01_multiple-choice.md --output_root=course_dev/pl-opb-ind100/questions/FM 
+    ```
