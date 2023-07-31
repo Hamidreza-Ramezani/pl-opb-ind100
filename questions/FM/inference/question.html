@@ -1,0 +1,36 @@
+<pl-question-panel>
+<markdown>
+A Kaiser Family Foundation poll for US adults in 2019 reported varying levels of support for a generic "National Health Plan" among different political affiliations. For Independents, it was found that approximately {{ params.vars.p_hat_percent }}% supported the plan.
+
+There were various sample sizes for each group, but for this problem, we are focusing on the responses from the Independents.
+
+</markdown>
+</pl-question-panel>
+
+
+<!-- ######## Start of Part 1 ######## -->
+
+<pl-question-panel>
+	<markdown>If we wanted to estimate this number to within {{ params.vars.margin_of_error_percent }}% with {{ params.vars.confidence }}% confidence, what would be an appropriate sample size?
+	</markdown>
+</pl-question-panel>
+
+<pl-number-input answers-name="part1_ans" rtol = "0.01" weight = "1" allow-blank = "False" label = "$n =$" ></pl-number-input>
+
+<pl-answer-panel>because a sample proportion $(\hat{p} = {{ params.vars.p_hat }})$ is available, we use this for the sample size calculations. The margin of error for a ${{ params.vars.confidence }}$% confidence interval is ${{ params.vars.z_score }} \times SE = {{ params.vars.z_score }} \times \sqrt{\frac{p(1-p)}{n}}$. We want this to be less than $0.01$, where we use $\hat{p}$ in place of $p:$
+
+${{ params.vars.z_score }} \times \sqrt{\frac{ {{ params.vars.p_hat }} \times (1 - {{ params.vars.p_hat }} )}{n}} \leq 0.01$.
+
+${{ params.vars.z_score }}^2 \times \sqrt{\frac{ {{ params.vars.p_hat }} \times (1 - {{ params.vars.p_hat }} )}{0.01^2}} \leq n$.
+
+From this, we get that $n$ must be at least ${{ params.vars.n }}$.
+ </pl-answer-panel>
+
+<!-- ######## End of Part 1 ######## -->
+
+<pl-question-panel>
+<markdown>
+---
+Problem is from the [OpenIntro Statistics](https://openintro.org/book/os/) textbook, licensed under the [CC-BY 4.0 license](https://creativecommons.org/licenses/by/4.0/).<br>![Image representing the Creative Commons 4.0 BY license.](https://raw.githubusercontent.com/firasm/bits/master/by.png)
+</markdown>
+</pl-question-panel>

@@ -1,0 +1,13 @@
+{
+    "uuid": "b4452017-7df4-37cb-98bf-4b18f9f3eac9",
+    "title": "National Health Plan, Part II",
+    "topic": "006.Inference for categorical data",
+    "tags": [
+        "number-input",
+        "AB"
+    ],
+    "type": "v3",
+    "showCorrectAnswer": true,
+    "singleVariant": false,
+    "partialCredit": true
+}
