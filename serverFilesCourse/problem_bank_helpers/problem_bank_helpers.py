@@ -1,11 +1,18 @@
 # Author: Firas Moosvi, Jake Bobowski, others
 # Date: 2021-06-13
 
+import base64
 from collections import defaultdict
 import numpy as np
 import sigfig
 import pandas as pd
 import importlib.resources
+from decimal import Decimal, getcontext, ROUND_HALF_UP
+import re
+
+# Set rounding context
+round_context = getcontext()
+round_context.rounding = ROUND_HALF_UP
 
 ## Load data and dictionaries
 
@@ -42,7 +49,8 @@ def create_data2():
 
 def sigfigs(x):
     '''Returns the number of significant digits in a number. This takes into account
-       strings formatted in 1.23e+3 format and even strings such as 123.450'''
+       strings formatted in 1.23e+3 format and even strings such as 123.450 .
+       This has a limit of 16 sigfigs, which can be increased but doesn't seem practical'''
     # if x is negative, remove the negative sign from the string.
     if float(x) < 0:
         x = x[1:]
@@ -51,11 +59,12 @@ def sigfigs(x):
     if ('e' in x):
         # return the length of the numbers before the 'e'
         myStr = x.split('e')
-        return len( myStr[0] ) - 1 # to compenstate for the decimal point
+        
+        return len( myStr[0] ) - (1 if '.' in x else 0) # to compensate for the decimal point
     else:
         # put it in e format and return the result of that
-        ### NOTE: because of the 8 below, it may do crazy things when it parses 9 sigfigs
-        n = ('%.*e' %(8, float(x))).split('e')
+        ### NOTE: because of the 15 below, it may do crazy things when it parses 16 sigfigs
+        n = f'{float(x):.15e}'.split('e')
         # remove and count the number of removed user added zeroes. (these are sig figs)
         if '.' in x:
             s = x.replace('.', '')
@@ -70,14 +79,27 @@ def sigfigs(x):
     return sigfigs('e'.join(n))
     
     
-# A function to rounding a number x keeping sig significant figures. 
 def round_sig(x, sig):
+    """
+    Round a number to a specified number of significant digits.
+
+    Args:
+        x (float or int): The number to be rounded.
+        sig (int): The number of significant digits.
+
+    Returns:
+        float or int: The rounded number retaining the type of the input.
+    """
     from math import log10, floor
     if x == 0:
         y = 0
     else:
         y = sig - int(floor(log10(abs(x)))) - 1
-    return round(x, y)
+    # avoid precision loss with floats 
+    decimal_x = round( Decimal(str(x)) , y )
+    
+    return type(x)(decimal_x)
+
 
 # def round_sig(x, sig_figs = 3):
 #     """A function that rounds to specific significant digits. Original from SO: https://stackoverflow.com/a/3413529/2217577; adapted by Jake Bobowski
@@ -103,7 +125,7 @@ def sigFigCheck(subVariable, LaTeXstr, unitString):
             return None
             
             
-# An error-checking function disigned to give hints if the submitted answer is:
+# An error-checking function designed to give hints if the submitted answer is:
 # (1) correct except for and overall sign or...
 # (2) the answer is right expect for the power of 10 multiplier or...
 # (3) answer has both a sign and exponent error.            
@@ -162,26 +184,47 @@ def roundp(*args,**kwargs):
         
     num_str = str(float(a[0]))
         
-    # Add trailing zeroes if needed
-    
+    # Create default sigfigs if necessary
     if kw.get('sigfigs',None):
         z = kw['sigfigs']
     elif kw.get('decimals', None):
         z = kw['decimals']
     else:
         z = 3 # Default sig figs
-                        
-    num_str = num_str + str(0)*z*2
-                
-    result = sigfig.round(num_str,**kwargs)
+        kwargs['sigfigs'] = z
+
+    # Handle big and small numbers carefully
+    if abs(float(num_str)) < 1e-4 or abs(float(num_str)) > 1e15:
+        power = int(abs(float(num_str))).as_integer_ratio()[1].bit_length() - 1
+        if power < 0:
+            power = 0
+        num_str = format(float(num_str), f".{power}e")
+        kwargs['notation'] = 'sci'
+    else:
+        num_str = num_str + str(0)*z*2
+    
+    # Add trailing zeroes if necessary
+    if z > sigfigs(num_str):
+        split_string = num_str.split("e")
+        if "." not in split_string[0]:
+            split_string[0] = split_string[0] + "."
+        split_string[0] = split_string[0] + ("0"*(z - sigfigs(num_str)))
+        num_str = "e".join(split_string)
+    
+    # sigfig.round doesn't like zero
+    if abs(float(num_str)) == 0:
+        result = num_str
+        print("num is zero: " + result + "\n")
+    else:            
+        result = sigfig.round(num_str,**kwargs)
         
     # Switch back to the original format if it was a float
     if isinstance(a[0],float):
-        return float(result) # Note, sig figs will not be carried through if this is a float
+        return float(result.replace(",", "")) # Note, sig figs will not be carried through if this is a float
     elif isinstance(a[0],str):
         return result
     elif isinstance(a[0],int):
-        return int(float(result))
+        return int(float(result.replace(",", "")))
     else:
         return sigfig.round(*args,**kwargs)
 
@@ -190,7 +233,7 @@ def round_str(*args,**kwargs):
     if type(args[0]) is str:
         return args[0]
     
-    if 'sigfigs' not in kwargs.keys():
+    if 'sigfigs' not in kwargs.keys() and 'decimals' not in kwargs.keys():
         kwargs['sigfigs'] = 2
     
     if 'format' not in kwargs.keys():
@@ -225,13 +268,8 @@ def num_as_str(num, digits_after_decimal = 2):
     elif type(num) == dict:
         return num
     else:
-        from decimal import Decimal, getcontext, ROUND_HALF_UP
-
-        round_context = getcontext()
-        round_context.rounding = ROUND_HALF_UP
-
-        tmp = Decimal(num).quantize(Decimal('1.'+'0'*digits_after_decimal))
-
+        tmp = Decimal(str(num)).quantize(Decimal('1.'+'0'*digits_after_decimal))
+        
         return str(tmp)
 
 def sign_str(number):
@@ -301,3 +339,54 @@ def ErrorCheck(subVariable, Variable, LaTeXstr, tolerance):
             return None
     else:
         return None
+
+def backticks_to_code_tags(data):
+    """
+    Converts backticks to <code> tags, and code fences to <pl-code> tags for a filled PrairieLearn question data dictionary.
+    Note: this only makes replacements multiple choice (and other similar question) answer options.
+
+    Args:
+        html (str): The HTML to convert
+    """
+    params = data["params"]
+    for param, param_data in params.items():
+        if not param.startswith("part"):
+            continue
+        for answer, answer_data in param_data.items():
+            if any(opt in answer for opt in {"ans", "statement", "option"}):
+                if isinstance(value := answer_data["value"], str):
+                    value = re.sub(
+                        r"```(?P<language>\w+)?(?(language)(\{(?P<highlighting>[\d,-]*)\})?|)(?P<Code>[^`]+)```",
+                        r'<pl-code language="\g<language>" highlight-lines="\g<highlighting>">\g<Code></pl-code>',
+                        value,
+                        flags=re.MULTILINE,
+                    )
+                    value = value.replace(' language=""', "")  # Remove empty language attributes
+                    value = value.replace(
+                        ' highlight-lines=""', ""
+                    )  # Remove empty highlight-lines attributes
+                    value = re.sub(r"(?<!\\)`(?P<Code>[^`]+)`", r"<code>\g<Code></code>", value)
+                    value = value.replace("\\`", "`")  # Replace escaped backticks
+                    data["params"][param][answer]["value"] = value
+
+def base64_encode_string(string):
+    """Encode a string into a base64 representation to act as a file for prarielearn
+    """
+    # Based off of https://github.com/PrairieLearn/PrairieLearn/blob/2ff7c5cc2435bae80c0ba512631749f9c3eadb43/exampleCourse/questions/demo/autograder/python/leadingTrailing/server.py#L9-L11
+    return base64.b64encode(string.encode("utf-8")).decode("utf-8")
+
+def base64_decode_file(file):
+    """Decode a base64 string which is a file from prairielearn into a useable string
+    """
+    # symetrical to base64_encode_string
+    return base64.b64decode(to_decode.encode("utf-8")).decode("utf-8")
+
+def string_to_pl_user_file(string, data):
+    """Encode a string to base64 and add it as the user submitted code file  
+    """
+    # partially based off of https://github.com/PrairieLearn/PrairieLearn/blob/2ff7c5cc2435bae80c0ba512631749f9c3eadb43/apps/prairielearn/elements/pl-file-upload/pl-file-upload.py#L114C1-L119
+    parsed_file = {"name": "user_code.py", "contents": base64_encode_string(answer)}
+    if isinstance(data["submitted_answers"].get("_files", None), list):
+        data["submitted_answers"]["_files"].append(parsed_file)
+    else:
+        data["submitted_answers"]["_files"] = [parsed_file]
